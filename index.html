@@ -3,177 +3,823 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EXPO GUIDE 地点登録</title>
+<title>EXPO GUIDE 車内自動案内</title>
+
 <style>
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;
-  background:#f3f5f4;margin:0;color:#222
+  background:#f3f5f4;
+  margin:0;
+  color:#222;
 }
-.wrap{max-width:700px;margin:auto;padding:18px}
+
+.wrap{
+  max-width:700px;
+  margin:auto;
+  padding:18px;
+}
+
 .card{
-  background:white;border-radius:18px;padding:18px;margin:12px 0;
-  box-shadow:0 2px 10px #0001
+  background:white;
+  border-radius:18px;
+  padding:18px;
+  margin:12px 0;
+  box-shadow:0 2px 10px #0001;
 }
-h1{font-size:24px}
-.status{font-weight:bold;font-size:18px}
-.gps{font-family:monospace;line-height:1.8;margin:12px 0}
+
+h1{
+  font-size:26px;
+}
+
+.status{
+  font-weight:bold;
+  font-size:20px;
+  margin-bottom:10px;
+}
+
+.gps{
+  font-family:monospace;
+  line-height:1.8;
+  margin:12px 0;
+}
+
 button{
-  border:0;border-radius:12px;padding:14px;margin:4px;
-  font-size:17px;font-weight:bold;background:#e5ebe7
+  border:0;
+  border-radius:12px;
+  padding:14px;
+  margin:4px;
+  font-size:17px;
+  font-weight:bold;
+  background:#e5ebe7;
 }
+
 .primary{
-  width:100%;background:#28734d;color:white;font-size:19px
+  width:100%;
+  background:#28734d;
+  color:white;
+  font-size:19px;
 }
+
+.warning{
+  width:100%;
+  background:#b77b18;
+  color:white;
+  font-size:19px;
+}
+
+.stop{
+  width:100%;
+  background:#9b3d3d;
+  color:white;
+  font-size:19px;
+}
+
 input,textarea{
-  width:100%;box-sizing:border-box;padding:12px;
-  border:1px solid #ccd5cf;border-radius:10px;
-  font-size:17px;margin:6px 0 12px
+  width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  border:1px solid #ccd5cf;
+  border-radius:10px;
+  font-size:17px;
+  margin:6px 0 12px;
 }
-.item{border-top:1px solid #ddd;padding:13px 0}
-.small{font-size:13px;color:#68716b}
+
+.item{
+  border-top:1px solid #ddd;
+  padding:14px 0;
+}
+
+.small{
+  font-size:13px;
+  color:#68716b;
+}
+
+.guide{
+  background:#e9f3ed;
+  border-radius:14px;
+  padding:15px;
+  margin-top:12px;
+  font-size:18px;
+}
+
+.speaking{
+  font-size:22px;
+  font-weight:bold;
+  text-align:center;
+  padding:12px;
+}
+
+.near{
+  font-weight:bold;
+  font-size:18px;
+}
 </style>
 </head>
 
 <body>
+
 <div class="wrap">
 
 <h1>📍 EXPO GUIDE</h1>
-<p>瀬谷駅 → 竹中グループ 横浜国際園芸博覧会ヴィレッジ</p>
 
-<div class="card">
-  <div class="status" id="status">GPS待機中</div>
-  <div class="gps" id="gps">
-    「GPSを開始」を押してください。
-  </div>
+<p>
+瀬谷駅 → 竹中グループ 横浜国際園芸博覧会ヴィレッジ
+</p>
 
-  <button id="start" class="primary">
-    📡 GPSを開始
-  </button>
 
-  <div id="message"></div>
-</div>
+<!-- GPS -->
 
 <div class="card">
 
-  <h3>地点を登録</h3>
+<div class="status" id="status">
+⚪ GPS停止中
+</div>
 
-  <label>地点名</label>
-  <input id="name" placeholder="例：ヴィレッジ入口">
+<div class="gps" id="gps">
+GPSを開始してください。
+</div>
 
-  <label>説明メモ</label>
-  <textarea id="note" rows="3"
-    placeholder="例：右手の建物について説明する"></textarea>
+<button id="start" class="primary">
+📡 GPSを開始
+</button>
 
-  <button id="save" class="primary">
-    📍 現在地を登録
-  </button>
+<button id="stop" class="stop">
+■ GPSを停止
+</button>
 
-  <p class="small">
-    登録ボタンを押した瞬間のGPS位置を保存します。
-  </p>
+<div id="message"></div>
 
 </div>
+
+
+<!-- 音声案内 -->
 
 <div class="card">
 
-  <h3>登録済み地点</h3>
+<h2>🔊 車内自動案内</h2>
 
-  <div id="list">
-    <p class="small">まだ登録地点はありません。</p>
-  </div>
+<p>
+車が登録地点に近づくと、説明を自動的に読み上げます。
+</p>
 
-  <button id="export">
-    ⬇️ データを書き出す
-  </button>
+<button id="guideStart" class="primary">
+🔊 音声案内を開始
+</button>
 
-  <button id="clear">
-    🗑 全削除
-  </button>
+<button id="guideStop" class="stop">
+🔇 音声案内を停止
+</button>
+
+<div id="speechStatus" class="speaking">
+音声案内：停止中
+</div>
+
+</div>
+
+
+<!-- 現在地登録 -->
+
+<div class="card">
+
+<h2>📍 地点を登録</h2>
+
+<label>地点名</label>
+
+<input
+ id="name"
+ placeholder="例：ヴィレッジ入口"
+>
+
+<label>説明メモ</label>
+
+<textarea
+ id="note"
+ rows="4"
+ placeholder="例：右手に見える建物は○○です。"
+></textarea>
+
+<label>
+音声案内する距離
+</label>
+
+<select id="radius"
+ style="
+ width:100%;
+ padding:12px;
+ border-radius:10px;
+ font-size:17px;
+ margin:6px 0 12px;
+ ">
+
+<option value="20">20m</option>
+<option value="30" selected>30m</option>
+<option value="50">50m</option>
+<option value="80">80m</option>
+<option value="100">100m</option>
+
+</select>
+
+<button id="save" class="primary">
+📍 現在地を登録
+</button>
+
+<p class="small">
+登録ボタンを押した瞬間のGPS位置を保存します。
+</p>
+
+</div>
+
+
+<!-- 次の案内 -->
+
+<div class="card">
+
+<h2>🚗 次の案内</h2>
+
+<div id="nextGuide">
+GPSを開始すると表示されます。
+</div>
+
+</div>
+
+
+<!-- 登録地点 -->
+
+<div class="card">
+
+<h2>📋 登録済み地点</h2>
+
+<div id="list">
+まだ登録地点はありません。
+</div>
+
+<button id="export">
+⬇️ データを書き出す
+</button>
+
+<button id="clear">
+🗑 全削除
+</button>
 
 </div>
 
 </div>
+
 
 <script>
 
 let position = null;
+
 let watchId = null;
 
-let points =
-  JSON.parse(localStorage.getItem("expoGuidePoints") || "[]");
+let gpsRunning = false;
 
-const $ = id => document.getElementById(id);
+let guideRunning = false;
+
+
+/*
+  登録地点
+
+  localStorageを使うため、
+  今まで登録した地点は基本的に残ります。
+*/
+
+let points =
+  JSON.parse(
+    localStorage.getItem("expoGuidePoints") || "[]"
+  );
+
+
+/* 一度案内した地点を記録 */
+
+let spokenPoints =
+  JSON.parse(
+    sessionStorage.getItem("expoGuideSpoken") || "[]"
+  );
+
+
+const $ = id =>
+  document.getElementById(id);
+
+
+/* HTML安全処理 */
 
 function escapeHTML(text){
-  return String(text).replace(/[&<>"]/g, c => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;"
-  }[c]));
+
+  return String(text).replace(
+    /[&<>"]/g,
+    c => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;"
+    }[c])
+  );
+
 }
+
+
+/* 距離計算 */
+
+function distanceMeters(
+  lat1,
+  lon1,
+  lat2,
+  lon2
+){
+
+  const R = 6371000;
+
+  const rad =
+    Math.PI / 180;
+
+  const dLat =
+    (lat2-lat1) * rad;
+
+  const dLon =
+    (lon2-lon1) * rad;
+
+  const a =
+    Math.sin(dLat/2) *
+    Math.sin(dLat/2)
+    +
+    Math.cos(lat1*rad) *
+    Math.cos(lat2*rad) *
+    Math.sin(dLon/2) *
+    Math.sin(dLon/2);
+
+  const c =
+    2 *
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1-a)
+    );
+
+  return R*c;
+
+}
+
+
+/* GPS表示 */
 
 function displayPosition(p){
 
   position = {
+
     lat:p.coords.latitude,
+
     lon:p.coords.longitude,
+
     accuracy:p.coords.accuracy
+
   };
 
-  $("status").textContent = "🟢 GPS取得中";
+
+  $("status").textContent =
+    "🟢 GPS取得中";
+
 
   $("gps").innerHTML =
-    "緯度：" + position.lat.toFixed(7) + "<br>" +
-    "経度：" + position.lon.toFixed(7) + "<br>" +
-    "精度：約" + Math.round(position.accuracy) + "m";
+
+    "緯度：" +
+    position.lat.toFixed(7) +
+
+    "<br>" +
+
+    "経度：" +
+    position.lon.toFixed(7) +
+
+    "<br>" +
+
+    "精度：約" +
+    Math.round(position.accuracy) +
+    "m";
+
+
+  checkGuidance();
 
 }
+
+
+/* GPSエラー */
 
 function gpsError(error){
 
-  $("status").textContent = "🔴 GPS取得エラー";
+  $("status").textContent =
+    "🔴 GPS取得エラー";
 
   $("message").textContent =
-    "GPSを取得できませんでした。"
-    + error.message;
+    "GPSを取得できませんでした。 " +
+    error.message;
 
 }
+
+
+/* GPS開始 */
 
 $("start").onclick = function(){
 
   if(!navigator.geolocation){
 
     $("message").textContent =
-      "このiPhoneではGPSを利用できません。";
+      "この端末ではGPSを利用できません。";
 
     return;
+
   }
 
-  $("status").textContent = "🟡 GPS取得中…";
+
+  gpsRunning = true;
+
+
+  $("status").textContent =
+    "🟡 GPS取得中…";
+
 
   navigator.geolocation.getCurrentPosition(
+
     displayPosition,
+
     gpsError,
+
     {
+
       enableHighAccuracy:true,
+
       timeout:20000,
+
       maximumAge:0
+
     }
+
   );
+
+
+  if(watchId !== null){
+
+    navigator.geolocation.clearWatch(
+      watchId
+    );
+
+  }
+
 
   watchId =
     navigator.geolocation.watchPosition(
+
       displayPosition,
+
       gpsError,
+
       {
+
         enableHighAccuracy:true,
+
         timeout:20000,
+
         maximumAge:2000
+
       }
+
     );
 
 };
+
+
+/* GPS停止 */
+
+$("stop").onclick = function(){
+
+  gpsRunning = false;
+
+
+  if(watchId !== null){
+
+    navigator.geolocation.clearWatch(
+      watchId
+    );
+
+    watchId = null;
+
+  }
+
+
+  $("status").textContent =
+    "⚪ GPS停止中";
+
+};
+
+
+/* 音声案内開始 */
+
+$("guideStart").onclick = function(){
+
+  /*
+    iPhone/iPadの音声再生許可を
+    ユーザー操作で取得する
+  */
+
+  if(!("speechSynthesis" in window)){
+
+    alert(
+      "この端末では音声読み上げを利用できません。"
+    );
+
+    return;
+
+  }
+
+
+  guideRunning = true;
+
+
+  /*
+    短いテスト音声を再生して
+    音声機能を有効化
+  */
+
+  const test =
+    new SpeechSynthesisUtterance(
+      "音声案内を開始します"
+    );
+
+  test.lang = "ja-JP";
+
+  test.rate = 0.9;
+
+  window.speechSynthesis.cancel();
+
+  window.speechSynthesis.speak(test);
+
+
+  $("speechStatus").textContent =
+    "🔊 音声案内：稼働中";
+
+
+  $("speechStatus").style.color =
+    "#28734d";
+
+
+  checkGuidance();
+
+};
+
+
+/* 音声案内停止 */
+
+$("guideStop").onclick = function(){
+
+  guideRunning = false;
+
+  window.speechSynthesis.cancel();
+
+
+  $("speechStatus").textContent =
+    "🔇 音声案内：停止中";
+
+
+  $("speechStatus").style.color =
+    "";
+
+};
+
+
+/* 音声を読み上げる */
+
+function speakPoint(point){
+
+  if(!guideRunning){
+
+    return;
+
+  }
+
+
+  if(!("speechSynthesis" in window)){
+
+    return;
+
+  }
+
+
+  /*
+    同じ地点を何度も
+    繰り返し案内しない
+  */
+
+  if(
+    spokenPoints.includes(
+      point.number
+    )
+  ){
+
+    return;
+
+  }
+
+
+  spokenPoints.push(
+    point.number
+  );
+
+
+  sessionStorage.setItem(
+    "expoGuideSpoken",
+    JSON.stringify(
+      spokenPoints
+    )
+  );
+
+
+  window.speechSynthesis.cancel();
+
+
+  const text =
+
+    point.name +
+
+    "。" +
+
+    point.note;
+
+
+  const utterance =
+    new SpeechSynthesisUtterance(
+      text
+    );
+
+
+  utterance.lang =
+    "ja-JP";
+
+
+  /*
+    車内で聞き取りやすいように
+    少しゆっくり
+  */
+
+  utterance.rate =
+    0.9;
+
+
+  utterance.pitch =
+    1.0;
+
+
+  $("speechStatus").textContent =
+    "🔊 案内中：" +
+    point.name;
+
+
+  window.speechSynthesis.speak(
+    utterance
+  );
+
+
+  utterance.onend =
+    function(){
+
+      $("speechStatus").textContent =
+        "🔊 音声案内：稼働中";
+
+    };
+
+}
+
+
+/* GPS位置から自動案内を判定 */
+
+function checkGuidance(){
+
+  if(!position){
+
+    return;
+
+  }
+
+
+  if(points.length === 0){
+
+    $("nextGuide").innerHTML =
+      "登録地点がありません。";
+
+    return;
+
+  }
+
+
+  let nearest = null;
+
+  let nearestDistance =
+    Infinity;
+
+
+  points.forEach(
+
+    point => {
+
+      const d =
+        distanceMeters(
+
+          position.lat,
+
+          position.lon,
+
+          point.lat,
+
+          point.lon
+
+        );
+
+
+      if(d < nearestDistance){
+
+        nearestDistance = d;
+
+        nearest = point;
+
+      }
+
+
+      /*
+        指定した距離以内に入ったら
+        自動読み上げ
+      */
+
+      const radius =
+        Number(
+          point.radius || 30
+        );
+
+
+      if(
+        guideRunning &&
+        d <= radius
+      ){
+
+        speakPoint(point);
+
+      }
+
+    }
+
+  );
+
+
+  if(nearest){
+
+    const radius =
+      Number(
+        nearest.radius || 30
+      );
+
+
+    if(nearestDistance <= radius){
+
+      $("nextGuide").innerHTML =
+
+        "<div class='near'>" +
+
+        "📍 " +
+        escapeHTML(
+          nearest.name
+        ) +
+
+        "<br>" +
+
+        "現在地から約" +
+        Math.round(
+          nearestDistance
+        ) +
+        "m" +
+
+        "</div>";
+
+    }else{
+
+      $("nextGuide").innerHTML =
+
+        "📍 次の地点：" +
+        escapeHTML(
+          nearest.name
+        ) +
+
+        "<br>" +
+
+        "距離：約" +
+        Math.round(
+          nearestDistance
+        ) +
+        "m";
+
+    }
+
+  }
+
+}
+
+
+/* 地点登録 */
 
 $("save").onclick = function(){
 
@@ -183,167 +829,330 @@ $("save").onclick = function(){
       "先に「GPSを開始」を押してください。";
 
     return;
+
   }
 
-  if(position.accuracy > 80){
 
-    if(!confirm(
-      "現在のGPS精度は約"
-      + Math.round(position.accuracy)
-      + "mです。\nこの場所で登録しますか？"
-    )){
+  if(
+    position.accuracy > 80
+  ){
+
+    if(
+      !confirm(
+
+        "現在のGPS精度は約" +
+
+        Math.round(
+          position.accuracy
+        ) +
+
+        "mです。\n" +
+
+        "この場所で登録しますか？"
+
+      )
+    ){
+
       return;
+
     }
 
   }
 
+
   const point = {
 
-    number:points.length + 1,
+    number:
+      points.length + 1,
 
     name:
       $("name").value.trim()
-      || "地点" + (points.length + 1),
+      ||
+      "地点" +
+      (points.length + 1),
 
     note:
-      $("note").value.trim(),
+      $("note").value.trim()
+      ||
+      "説明は未登録です。",
 
-    lat:position.lat,
-    lon:position.lon,
+    lat:
+      position.lat,
 
-    accuracy:position.accuracy,
+    lon:
+      position.lon,
 
-    registeredAt:new Date().toISOString()
+    accuracy:
+      position.accuracy,
+
+    radius:
+      Number(
+        $("radius").value
+      ),
+
+    registeredAt:
+      new Date().toISOString()
 
   };
 
+
   points.push(point);
 
+
   localStorage.setItem(
+
     "expoGuidePoints",
+
     JSON.stringify(points)
+
   );
 
+
   $("name").value = "";
+
   $("note").value = "";
+
 
   $("message").textContent =
     "✅ 地点を登録しました。";
 
+
   render();
 
 };
+
+
+/* 登録地点表示 */
 
 function render(){
 
   if(points.length === 0){
 
     $("list").innerHTML =
-      '<p class="small">まだ登録地点はありません。</p>';
+      "まだ登録地点はありません。";
 
     return;
+
   }
 
+
   $("list").innerHTML =
-    points.map((p,i) => `
 
-      <div class="item">
+    points.map(
 
-        <b>${i+1}. ${escapeHTML(p.name)}</b>
+      (p,i) => `
 
-        <br>
+        <div class="item">
 
-        <span class="small">
-          緯度 ${p.lat.toFixed(7)}<br>
-          経度 ${p.lon.toFixed(7)}<br>
-          GPS精度 約${Math.round(p.accuracy)}m
-        </span>
+          <b>
+            ${i+1}.
+            ${escapeHTML(p.name)}
+          </b>
 
-        <p>${escapeHTML(p.note)}</p>
+          <br>
 
-        <button onclick="deletePoint(${i})">
-          この地点を削除
-        </button>
+          <span class="small">
 
-      </div>
+            緯度
+            ${p.lat.toFixed(7)}
 
-    `).join("");
+            <br>
+
+            経度
+            ${p.lon.toFixed(7)}
+
+            <br>
+
+            GPS精度 約
+            ${Math.round(p.accuracy)}
+            m
+
+            <br>
+
+            案内距離
+            ${p.radius || 30}
+            m
+
+          </span>
+
+          <p>
+            ${escapeHTML(p.note)}
+          </p>
+
+          <button
+            onclick="deletePoint(${i})"
+          >
+            この地点を削除
+          </button>
+
+        </div>
+
+      `
+
+    ).join("");
 
 }
+
+
+/* 地点削除 */
 
 function deletePoint(index){
 
-  if(confirm("この地点を削除しますか？")){
+  if(
+    confirm(
+      "この地点を削除しますか？"
+    )
+  ){
 
-    points.splice(index,1);
-
-    points.forEach((p,i)=>{
-      p.number=i+1;
-    });
-
-    localStorage.setItem(
-      "expoGuidePoints",
-      JSON.stringify(points)
+    points.splice(
+      index,
+      1
     );
 
+
+    points.forEach(
+
+      (p,i) => {
+
+        p.number =
+          i+1;
+
+      }
+
+    );
+
+
+    localStorage.setItem(
+
+      "expoGuidePoints",
+
+      JSON.stringify(points)
+
+    );
+
+
     render();
+
   }
 
 }
 
-$("clear").onclick = function(){
 
-  if(confirm("登録した地点をすべて削除しますか？")){
+/* 全削除 */
 
-    points=[];
+$("clear").onclick =
+function(){
+
+  if(
+    confirm(
+      "登録した地点をすべて削除しますか？"
+    )
+  ){
+
+    points = [];
+
 
     localStorage.setItem(
+
       "expoGuidePoints",
+
       "[]"
+
     );
 
+
     render();
+
   }
 
 };
 
-$("export").onclick = function(){
 
-  if(points.length === 0){
+/* データ書き出し */
 
-    alert("登録地点がありません。");
+$("export").onclick =
+function(){
+
+  if(
+    points.length === 0
+  ){
+
+    alert(
+      "登録地点がありません。"
+    );
+
     return;
 
   }
 
-  const data = JSON.stringify(
-    {
-      project:
-        "竹中グループ 横浜国際園芸博覧会ヴィレッジ",
-      route:
-        "瀬谷駅 → ヴィレッジ",
-      points:points
-    },
-    null,
-    2
-  );
+
+  const data =
+
+    JSON.stringify(
+
+      {
+
+        project:
+          "竹中グループ 横浜国際園芸博覧会ヴィレッジ",
+
+        route:
+          "瀬谷駅 → ヴィレッジ",
+
+        points:
+          points
+
+      },
+
+      null,
+
+      2
+
+    );
+
 
   const blob =
-    new Blob([data],{type:"application/json"});
+
+    new Blob(
+
+      [data],
+
+      {
+        type:
+          "application/json"
+      }
+
+    );
+
 
   const url =
-    URL.createObjectURL(blob);
+    URL.createObjectURL(
+      blob
+    );
 
-  const a=document.createElement("a");
 
-  a.href=url;
-  a.download="expo-guide-points.json";
+  const a =
+    document.createElement(
+      "a"
+    );
+
+
+  a.href = url;
+
+  a.download =
+    "expo-guide-points.json";
+
 
   a.click();
 
-  URL.revokeObjectURL(url);
+
+  URL.revokeObjectURL(
+    url
+  );
 
 };
+
+
+/* 初期表示 */
 
 render();
 
