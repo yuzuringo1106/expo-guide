@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EXPO GUIDE 地点登録</title>
+<style>
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;
+  background:#f3f5f4;margin:0;color:#222
+}
+.wrap{max-width:700px;margin:auto;padding:18px}
+.card{
+  background:white;border-radius:18px;padding:18px;margin:12px 0;
+  box-shadow:0 2px 10px #0001
+}
+h1{font-size:24px}
+.status{font-weight:bold;font-size:18px}
+.gps{font-family:monospace;line-height:1.8;margin:12px 0}
+button{
+  border:0;border-radius:12px;padding:14px;margin:4px;
+  font-size:17px;font-weight:bold;background:#e5ebe7
+}
+.primary{
+  width:100%;background:#28734d;color:white;font-size:19px
+}
+input,textarea{
+  width:100%;box-sizing:border-box;padding:12px;
+  border:1px solid #ccd5cf;border-radius:10px;
+  font-size:17px;margin:6px 0 12px
+}
+.item{border-top:1px solid #ddd;padding:13px 0}
+.small{font-size:13px;color:#68716b}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<h1>📍 EXPO GUIDE</h1>
+<p>瀬谷駅 → 竹中グループ 横浜国際園芸博覧会ヴィレッジ</p>
+
+<div class="card">
+  <div class="status" id="status">GPS待機中</div>
+  <div class="gps" id="gps">
+    「GPSを開始」を押してください。
+  </div>
+
+  <button id="start" class="primary">
+    📡 GPSを開始
+  </button>
+
+  <div id="message"></div>
+</div>
+
+<div class="card">
+
+  <h3>地点を登録</h3>
+
+  <label>地点名</label>
+  <input id="name" placeholder="例：ヴィレッジ入口">
+
+  <label>説明メモ</label>
+  <textarea id="note" rows="3"
+    placeholder="例：右手の建物について説明する"></textarea>
+
+  <button id="save" class="primary">
+    📍 現在地を登録
+  </button>
+
+  <p class="small">
+    登録ボタンを押した瞬間のGPS位置を保存します。
+  </p>
+
+</div>
+
+<div class="card">
+
+  <h3>登録済み地点</h3>
+
+  <div id="list">
+    <p class="small">まだ登録地点はありません。</p>
+  </div>
+
+  <button id="export">
+    ⬇️ データを書き出す
+  </button>
+
+  <button id="clear">
+    🗑 全削除
+  </button>
+
+</div>
+
+</div>
+
+<script>
+
+let position = null;
+let watchId = null;
+
+let points =
+  JSON.parse(localStorage.getItem("expoGuidePoints") || "[]");
+
+const $ = id => document.getElementById(id);
+
+function escapeHTML(text){
+  return String(text).replace(/[&<>"]/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;"
+  }[c]));
+}
+
+function displayPosition(p){
+
+  position = {
+    lat:p.coords.latitude,
+    lon:p.coords.longitude,
+    accuracy:p.coords.accuracy
+  };
+
+  $("status").textContent = "🟢 GPS取得中";
+
+  $("gps").innerHTML =
+    "緯度：" + position.lat.toFixed(7) + "<br>" +
+    "経度：" + position.lon.toFixed(7) + "<br>" +
+    "精度：約" + Math.round(position.accuracy) + "m";
+
+}
+
+function gpsError(error){
+
+  $("status").textContent = "🔴 GPS取得エラー";
+
+  $("message").textContent =
+    "GPSを取得できませんでした。"
+    + error.message;
+
+}
+
+$("start").onclick = function(){
+
+  if(!navigator.geolocation){
+
+    $("message").textContent =
+      "このiPhoneではGPSを利用できません。";
+
+    return;
+  }
+
+  $("status").textContent = "🟡 GPS取得中…";
+
+  navigator.geolocation.getCurrentPosition(
+    displayPosition,
+    gpsError,
+    {
+      enableHighAccuracy:true,
+      timeout:20000,
+      maximumAge:0
+    }
+  );
+
+  watchId =
+    navigator.geolocation.watchPosition(
+      displayPosition,
+      gpsError,
+      {
+        enableHighAccuracy:true,
+        timeout:20000,
+        maximumAge:2000
+      }
+    );
+
+};
+
+$("save").onclick = function(){
+
+  if(!position){
+
+    $("message").textContent =
+      "先に「GPSを開始」を押してください。";
+
+    return;
+  }
+
+  if(position.accuracy > 80){
+
+    if(!confirm(
+      "現在のGPS精度は約"
+      + Math.round(position.accuracy)
+      + "mです。\nこの場所で登録しますか？"
+    )){
+      return;
+    }
+
+  }
+
+  const point = {
+
+    number:points.length + 1,
+
+    name:
+      $("name").value.trim()
+      || "地点" + (points.length + 1),
+
+    note:
+      $("note").value.trim(),
+
+    lat:position.lat,
+    lon:position.lon,
+
+    accuracy:position.accuracy,
+
+    registeredAt:new Date().toISOString()
+
+  };
+
+  points.push(point);
+
+  localStorage.setItem(
+    "expoGuidePoints",
+    JSON.stringify(points)
+  );
+
+  $("name").value = "";
+  $("note").value = "";
+
+  $("message").textContent =
+    "✅ 地点を登録しました。";
+
+  render();
+
+};
+
+function render(){
+
+  if(points.length === 0){
+
+    $("list").innerHTML =
+      '<p class="small">まだ登録地点はありません。</p>';
+
+    return;
+  }
+
+  $("list").innerHTML =
+    points.map((p,i) => `
+
+      <div class="item">
+
+        <b>${i+1}. ${escapeHTML(p.name)}</b>
+
+        <br>
+
+        <span class="small">
+          緯度 ${p.lat.toFixed(7)}<br>
+          経度 ${p.lon.toFixed(7)}<br>
+          GPS精度 約${Math.round(p.accuracy)}m
+        </span>
+
+        <p>${escapeHTML(p.note)}</p>
+
+        <button onclick="deletePoint(${i})">
+          この地点を削除
+        </button>
+
+      </div>
+
+    `).join("");
+
+}
+
+function deletePoint(index){
+
+  if(confirm("この地点を削除しますか？")){
+
+    points.splice(index,1);
+
+    points.forEach((p,i)=>{
+      p.number=i+1;
+    });
+
+    localStorage.setItem(
+      "expoGuidePoints",
+      JSON.stringify(points)
+    );
+
+    render();
+  }
+
+}
+
+$("clear").onclick = function(){
+
+  if(confirm("登録した地点をすべて削除しますか？")){
+
+    points=[];
+
+    localStorage.setItem(
+      "expoGuidePoints",
+      "[]"
+    );
+
+    render();
+  }
+
+};
+
+$("export").onclick = function(){
+
+  if(points.length === 0){
+
+    alert("登録地点がありません。");
+    return;
+
+  }
+
+  const data = JSON.stringify(
+    {
+      project:
+        "竹中グループ 横浜国際園芸博覧会ヴィレッジ",
+      route:
+        "瀬谷駅 → ヴィレッジ",
+      points:points
+    },
+    null,
+    2
+  );
+
+  const blob =
+    new Blob([data],{type:"application/json"});
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const a=document.createElement("a");
+
+  a.href=url;
+  a.download="expo-guide-points.json";
+
+  a.click();
+
+  URL.revokeObjectURL(url);
+
+};
+
+render();
+
+</script>
+
+</body>
+</html>
